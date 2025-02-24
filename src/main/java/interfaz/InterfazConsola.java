@@ -1,6 +1,8 @@
 package interfaz;
 
 import excepciones.ClienteDuplicadoException;
+import excepciones.HabitacionNoDisponibleException;
+import excepciones.ReservaNoEncontradaException;
 import modelo.*;
 import patrones.ClienteObserver;
 import sistema.SistemaReservas;
@@ -8,6 +10,7 @@ import sistema.SistemaReservas;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class InterfazConsola {
@@ -26,7 +29,9 @@ public class InterfazConsola {
             System.out.println("2. Crear Reserva");
             System.out.println("3. Agregar Servicio a Reserva");
             System.out.println("4. Ver Reservas");
-            System.out.println("5. Salir");
+            System.out.println("5. Cancelar Reserva");
+            System.out.println("6. Ver estadisticas");
+            System.out.println("7. Salir");
             System.out.print("Seleccione una opción: ");
 
             int opcion = scanner.nextInt();
@@ -46,6 +51,12 @@ public class InterfazConsola {
                     verReservas();
                     break;
                 case 5:
+                    cancelarReserva();
+                    break;
+                case 6:
+                    mostrarEstadisticas();
+                    break;
+                case 7:
                     return;
                 default:
                     System.out.println("Opción no válida");
@@ -83,7 +94,7 @@ public class InterfazConsola {
         // Mostrar habitaciones disponibles
         System.out.println("\nHabitaciones disponibles:");
         for (Habitacion habitacion : sistema.getHabitacionesDisponibles()) {
-            System.out.printf("Número: %s, Tipo: %s, Precio por noche: %.2f€\n",
+            System.out.printf("Número: %s, Tipo: %s, Precio por noche: %.2f$\n",
                     habitacion.getNumero(),
                     habitacion.getTipo(),
                     habitacion.getPrecioPorNoche());
@@ -100,6 +111,11 @@ public class InterfazConsola {
         System.out.println("Fecha de salida (formato YYYY-MM-DD): ");
         LocalDate fechaSalida = LocalDate.parse(scanner.nextLine());
 
+        boolean disponible = sistema.verificarDisponibilidad(numeroHabitacion, fechaEntrada, fechaSalida);
+        if (!disponible) {
+            System.out.println("Error: Habitación ocupada en las fechas seleccionadas");
+            return;        }
+
         try {
             Reserva reserva = sistema.crearReserva(idCliente, numeroHabitacion, fechaEntrada, fechaSalida);
 
@@ -110,7 +126,7 @@ public class InterfazConsola {
 
             System.out.println("\nReserva creada exitosamente");
             System.out.printf("ID de reserva: %s\n", reserva.getId());
-            System.out.printf("Costo total: %.2f€\n", reserva.calcularCostoTotal());
+            System.out.printf("Costo total: %.2f$\n", reserva.calcularCostoTotal());
 
         } catch (Exception e) {
             System.out.println("Error al crear la reserva: " + e.getMessage());
@@ -133,10 +149,10 @@ public class InterfazConsola {
 
         // Mostrar servicios disponibles
         System.out.println("\nServicios disponibles:");
-        System.out.println("1. Servicio de Limpieza (20€)");
-        System.out.println("2. Desayuno (15€)");
-        System.out.println("3. Parking (10€)");
-        System.out.println("4. Servicio de Habitación (25€)");
+        System.out.println("1. Servicio de Limpieza (20$)");
+        System.out.println("2. Desayuno (15$)");
+        System.out.println("3. Parking (10$)");
+        System.out.println("4. Servicio de Habitación (25$)");
         System.out.print("\nSeleccione un servicio: ");
 
         int opcionServicio = scanner.nextInt();
@@ -165,7 +181,7 @@ public class InterfazConsola {
         if (servicio != null) {
             reserva.addServicio(servicio);
             System.out.println("Servicio agregado exitosamente");
-            System.out.printf("Nuevo costo total de la reserva: %.2f€\n",
+            System.out.printf("Nuevo costo total de la reserva: %.2f$\n",
                     reserva.calcularCostoTotal());
         }
     }
@@ -213,12 +229,34 @@ public class InterfazConsola {
 
             System.out.println("Servicios contratados:");
             for (Servicio servicio : reserva.getServicios()) {
-                System.out.printf("- %s (%.2f€)\n",
+                System.out.printf("- %s (%.2f$)\n",
                         servicio.getDescripcion(),
                         servicio.getCosto());
             }
 
-            System.out.printf("Costo total: %.2f€\n", reserva.calcularCostoTotal());
+            System.out.printf("Costo total: %.2f$\n", reserva.calcularCostoTotal());
         }
+    }
+
+    // Método cancelarReserva:
+    private void cancelarReserva() {
+        System.out.print("ID de la reserva a cancelar: ");
+        String idReserva = scanner.nextLine();
+        try {
+            sistema.cancelarReserva(idReserva);
+            System.out.println("Reserva cancelada exitosamente");
+        } catch (ReservaNoEncontradaException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // Método mostrarEstadisticas:
+    private void mostrarEstadisticas() {
+        Map<String, Object> stats = sistema.obtenerEstadisticas();
+        System.out.println("\n=== Estadísticas del Sistema ===");
+        System.out.println("Total de reservas: " + stats.get("totalReservas"));
+        System.out.println("Total de clientes: " + stats.get("totalClientes"));
+        System.out.println("Habitaciones disponibles: " + stats.get("habitacionesDisponibles"));
+        System.out.printf("Ingreso total: %.2f$\n", stats.get("ingresoTotal"));
     }
 }

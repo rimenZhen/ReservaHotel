@@ -14,7 +14,6 @@ public class Reserva extends Observable {
     private LocalDate fechaEntrada;
     private LocalDate fechaSalida;
     private List<Servicio> servicios;
-    private List<Observer> observers;
 
     public Reserva(String id, Cliente cliente, Habitacion habitacion,
                    LocalDate fechaEntrada, LocalDate fechaSalida) {
@@ -24,22 +23,15 @@ public class Reserva extends Observable {
         this.fechaEntrada = fechaEntrada;
         this.fechaSalida = fechaSalida;
         this.servicios = new ArrayList<>();
-        this.observers = new ArrayList<>();
     }
+
 
     public void addServicio(Servicio servicio) {
         servicios.add(servicio);
-        notifyObservers("Se agregó un nuevo servicio a la reserva");
+        setChanged(); // Marca cambio
+        super.notifyObservers("Se agregó un nuevo servicio a la reserva");
     }
 
-    public void addObserver(Observer observer) {
-        observers.add(observer);
-    }
-
-    private void notifyObservers(String mensaje) {
-        setChanged(); // Marca que ha habido un cambio
-        notifyObservers(mensaje); // Notifica a los observadores
-    }
 
     public double calcularCostoTotal() {
         long dias = ChronoUnit.DAYS.between(fechaEntrada, fechaSalida);
